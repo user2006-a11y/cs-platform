@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>منصة طلاب علوم الحاسوب</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f4f6fb;--card:#fff;--tx:#1b2333;--mut:#5d6b85;--bd:#dde3ee;--pri:#2f5fe0;--pt:#fff;--ok:#12803f;--okb:#e3f6ea;--no:#b3261e;--nob:#fde8e6;--wr:#8a5a00;--wrb:#fff4d6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0f1420;--card:#192032;--tx:#e8ecf5;--mut:#9aa7c2;--bd:#2a3550;--pri:#6b8cff;--pt:#0b1020;--ok:#5fd68b;--okb:#12301f;--no:#ff8f86;--nob:#3a1a18;--wr:#ffd073;--wrb:#3a2f10}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0f1420;--card:#192032;--tx:#e8ecf5;--mut:#9aa7c2;--bd:#2a3550;--pri:#6b8cff;--pt:#0b1020;--ok:#5fd68b;--okb:#12301f;--no:#ff8f86;--nob:#3a1a18;--wr:#ffd073;--wrb:#3a2f10}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Segoe UI",Tahoma,Arial,sans-serif;line-height:1.6;min-height:100vh}
+.wrap{max-width:560px;margin:0 auto;padding:18px 14px 40px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:18px;margin-bottom:14px}
+h1{font-size:1.35rem;margin:6px 0 2px}h2{font-size:1.1rem;margin:0 0 10px}
+.sub{color:var(--mut);margin:0 0 14px;font-size:.92rem}
+.tabs{display:flex;gap:6px;background:var(--bg);padding:4px;border-radius:12px;margin-bottom:14px}
+.tabs button{flex:1;border:0;background:none;color:var(--mut);padding:10px;border-radius:9px;font:inherit;font-weight:600;cursor:pointer}
+.tabs button.on{background:var(--card);color:var(--pri);box-shadow:0 1px 3px #0002}
+label{display:block;font-size:.88rem;color:var(--mut);margin:10px 0 4px}
+input{width:100%;padding:12px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit}
+input:focus{outline:2px solid var(--pri);border-color:transparent}
+.btn{border:0;border-radius:10px;padding:11px 16px;font:inherit;font-weight:700;cursor:pointer;background:var(--pri);color:var(--pt)}
+.btn.full{width:100%;margin-top:14px}
+.btn.ok{background:var(--ok);color:var(--pt)}.btn.no{background:var(--no);color:var(--pt)}
+.btn.ghost{background:none;color:var(--pri);border:1px solid var(--bd)}
+.btn:disabled{opacity:.5}
+.note{padding:10px 12px;border-radius:10px;margin-top:12px;font-size:.92rem}
+.note.err{background:var(--nob);color:var(--no)}.note.good{background:var(--okb);color:var(--ok)}.note.warn{background:var(--wrb);color:var(--wr)}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--bd);flex-wrap:wrap}
+.row:first-of-type{border-top:0}
+.row b{display:block}.row small{color:var(--mut)}
+.acts{display:flex;gap:6px}
+.acts .btn{padding:8px 12px;font-size:.88rem}
+.stats{display:flex;gap:8px;margin-bottom:12px}
+.stat{flex:1;background:var(--bg);border-radius:12px;padding:10px;text-align:center}
+.stat b{font-size:1.3rem;display:block}.stat span{font-size:.78rem;color:var(--mut)}
+.inl{display:flex;gap:8px;align-items:end}.inl>div{flex:1}
+.empty{color:var(--mut);text-align:center;padding:10px}
+ul.warn{margin:8px 0 0;padding-inline-start:20px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,signInWithEmailAndPassword,signOut,createUserWithEmailAndPassword} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,doc,getDoc,setDoc,updateDoc,collection,onSnapshot} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ====== الصق هنا إعدادات مشروعك من Firebase (انظر README) ====== */
+const firebaseConfig = {
+  apiKey: "AIzaSyBPyYR--LMGnRWDk5ZfTv81pDqYgPVQnUw",
+  authDomain: "mywep-65144.firebaseapp.com",
+  projectId: "mywep-65144",
+  storageBucket: "mywep-65144.firebasestorage.app",
+  messagingSenderId: "534570832709",
+  appId: "1:534570832709:web:90784f0c546d2a1f6de42c"
+};
+/* ================================================================ */
+const MAIN_USER = "abdo";           // المسؤول الرئيسي
+const DOMAIN = "@platform.local";   // نطاق وهمي لأسماء المسؤولين
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp), db = getFirestore(fbApp);
+
+let students=[],admins=[],cfg={capacity:15},me=null,view="auth",tab="login",note=null,unsubs=[],busy=false;
+const app=document.getElementById("app");
+const esc=s=>{const d=document.createElement("div");d.textContent=String(s==null?"":s);return d.innerHTML};
+const setNote=(t,k)=>{note=t?{t,k:k||"err"}:null};
+const noteHtml=()=>note?`<div class="note ${note.k}">${esc(note.t)}</div>`:"";
+const count=st=>students.filter(s=>s.status===st).length;
+const clearSubs=()=>{unsubs.forEach(u=>u());unsubs=[]};
+
+function render(){({auth:rAuth,welcome:rWelcome,admin:rAdmin,home:rHome,wait:rWait})[view]()}
+const header=()=>'<div style="text-align:center;margin:8px 0 16px"><div style="font-size:2.2rem">🎓</div><h1>منصة طلاب علوم الحاسوب</h1><p class="sub">مساحة لزملاء التخصص في الجامعة</p></div>';
+
+function rAuth(){
+  const login=tab==="login";
+  app.innerHTML=header()+`<div class="card"><div class="tabs"><button data-act="tab" data-v="login" class="${login?"on":""}">تسجيل الدخول</button><button data-act="tab" data-v="reg" class="${!login?"on":""}">إنشاء حساب جديد</button></div>`
+  +(login?'<label>الاسم</label><input id="f1" autocomplete="off"><label>الرقم الجامعي</label><input id="f2" type="password" autocomplete="off"><button class="btn full" data-act="login">دخول</button>'
+  :'<label>الاسم</label><input id="f1" autocomplete="off"><label>الرقم الجامعي</label><input id="f2" inputmode="numeric" autocomplete="off"><button class="btn full" data-act="reg">إرسال طلب الانضمام</button><p class="sub" style="margin-top:10px">سيصل طلبك إلى المسؤول وتدخل بعد موافقته.</p>')
+  +noteHtml()+"</div>";
+}
+function rWait(){
+  const st=me.status;
+  const m=st==="approved"?["تمت الموافقة على طلبك! سجّل الدخول الآن.","good"]:st==="rejected"?["تم رفض طلبك من المسؤول.","err"]:["تم إرسال طلبك إلى المسؤول، بانتظار الموافقة…","warn"];
+  app.innerHTML=header()+`<div class="card"><h2>مرحباً ${esc(me.name)}</h2><div class="note ${m[1]}" style="margin-top:0">${m[0]}</div><button class="btn ghost full" data-act="out">العودة لتسجيل الدخول</button></div>`;
+}
+function rWelcome(){
+  app.innerHTML=header()+`<div class="card"><div class="note good" style="margin-top:0"><b>✅ تمت الموافقة على دخولك</b><br>أهلاً بك ${esc(me.name)} في منصة طلاب علوم الحاسوب.</div>
+  <div class="note warn"><b>⚠️ تحذير بشأن السلوك</b><ul class="warn"><li>احترم زملاءك وأساتذتك في كل ما تنشره.</li><li>يُمنع التنمر أو الإساءة أو الألفاظ الجارحة.</li><li>يُمنع الغش أو تبادل الحلول في الاختبارات والتقييمات.</li><li>يحق للمسؤول إيقاف أي حساب يخالف هذه القواعد.</li></ul></div>
+  <button class="btn full" data-act="agree">أوافق وأتعهد بالالتزام</button><button class="btn ghost full" data-act="out">خروج</button></div>`;
+}
+function rHome(){
+  app.innerHTML=`<div class="bar"><h2 style="margin:0">أهلاً ${esc(me.name)}</h2><button class="btn ghost" data-act="out">خروج</button></div><div class="card"><h2>🚧 المنصة قيد البناء</h2><p class="sub">هذه الخطوة الأولى فقط. أرسل لي الأوامر التالية لنضيف الأقسام.</p></div>`;
+}
+function rAdmin(){
+  const pend=students.filter(s=>s.status==="pending").sort((a,b)=>a.at-b.at);
+  const appr=students.filter(s=>s.status==="approved"),rej=students.filter(s=>s.status==="rejected"),cap=cfg.capacity;
+  const rows=(l,b)=>l.length?l.map(s=>`<div class="row"><div><b>${esc(s.name)}</b><small>الرقم: ${esc(s.num)}</small></div><div class="acts">${b(s)}</div></div>`).join(""):'<div class="empty">لا يوجد</div>';
+  const ok=s=>`<button class="btn ok" data-act="approve" data-id="${esc(s.id)}">موافقة</button>`;
+  const no=(s,t)=>`<button class="btn no" data-act="reject" data-id="${esc(s.id)}">${t}</button>`;
+  app.innerHTML=`<div class="bar"><h2 style="margin:0">🛡️ لوحة المسؤول (${esc(me.name)})</h2><button class="btn ghost" data-act="out">خروج</button></div>
+  <div class="stats"><div class="stat"><b>${pend.length}</b><span>بانتظار القرار</span></div><div class="stat"><b>${appr.length} / ${cap}</b><span>المقبولون / السعة</span></div><div class="stat"><b>${rej.length}</b><span>المرفوضون</span></div></div>${noteHtml()}
+  <div class="card"><h2>📨 طلبات التسجيل</h2>${rows(pend,s=>ok(s)+no(s,"منع"))}</div>
+  <div class="card"><h2>✅ المقبولون</h2>${rows(appr,s=>no(s,"إيقاف"))}</div>
+  <div class="card"><h2>🚫 المرفوضون</h2>${rows(rej,ok)}</div>
+  <div class="card"><h2>👥 عدد المقبولين الأقصى</h2><div class="inl"><div><input id="cap" type="number" min="1" value="${cap}"></div><button class="btn" data-act="cap">حفظ</button></div></div>`
+  +(me.main?`<div class="card"><h2>➕ إضافة مسؤول جديد</h2><p class="sub">هذا الحق خاص بالمسؤول الرئيسي فقط. كلمة السر 6 أحرف على الأقل.</p><label>اسم المستخدم</label><input id="an" autocomplete="off"><label>كلمة السر</label><input id="ap" type="password" autocomplete="off"><button class="btn full" data-act="addadmin">إضافة</button><div style="margin-top:12px"><b>المسؤولون:</b> ${MAIN_USER} (رئيسي)${admins.map(a=>"، "+esc(a.u)).join("")}</div></div>`:"");
+}
+
+function startAdminSubs(){
+  clearSubs();
+  const err=e=>{setNote("خطأ في القراءة: "+e.code);render()};
+  unsubs.push(onSnapshot(collection(db,"students"),s=>{students=s.docs.map(d=>({...d.data(),id:d.id}));if(view==="admin")render()},err));
+  unsubs.push(onSnapshot(doc(db,"config","main"),s=>{if(s.exists()&&s.data().capacity)cfg=s.data();if(view==="admin")render()},()=>{}));
+  unsubs.push(onSnapshot(collection(db,"admins"),s=>{admins=s.docs.map(d=>d.data());if(view==="admin")render()},()=>{}));
+}
+function watchStudent(id){
+  clearSubs();
+  unsubs.push(onSnapshot(doc(db,"students",id),s=>{if(s.exists()){me.status=s.data().status;if(view==="wait")rWait()}},()=>{}));
+}
+async function adminLogin(user,pw){
+  const cr=await signInWithEmailAndPassword(auth,user+DOMAIN,pw);
+  const main=user===MAIN_USER;
+  if(!main){try{const d=await getDoc(doc(db,"admins",cr.user.uid));if(!d.exists())throw 0}catch(e){await signOut(auth);throw new Error("not-admin")}}
+  me={name:user,main};view="admin";startAdminSubs();render();
+}
+
+app.addEventListener("click",async ev=>{
+  const el=ev.target.closest("[data-act]");if(!el||busy)return;
+  const a=el.dataset.act,f1=document.getElementById("f1"),f2=document.getElementById("f2");
+  setNote(null);busy=true;
+  try{
+    if(a==="tab"){tab=el.dataset.v;render()}
+    else if(a==="out"){clearSubs();await signOut(auth);me=null;view="auth";tab="login";render()}
+    else if(a==="agree"){view="home";render()}
+    else if(a==="reg"){
+      const n=f1.value.trim(),num=f2.value.trim();
+      if(!n||!num){setNote("أدخل الاسم والرقم.");return render()}
+      if(!/^[A-Za-z0-9_.-]+$/.test(num)){setNote("الرقم يجب أن يحتوي أرقاماً أو حروفاً إنجليزية فقط.");return render()}
+      const ex=await getDoc(doc(db,"students",num));
+      if(ex.exists()){const st=ex.data().status;setNote(st==="approved"?"هذا الرقم مقبول مسبقاً، سجّل الدخول.":st==="rejected"?"تم رفض هذا الرقم سابقاً.":"طلبك مرسل مسبقاً وبانتظار المسؤول.","warn");return render()}
+      await setDoc(doc(db,"students",num),{name:n,num,status:"pending",at:Date.now()});
+      me={name:n,num,status:"pending"};view="wait";watchStudent(num);render();
+    }
+    else if(a==="login"){
+      const n=f1.value.trim(),pw=f2.value.trim();
+      if(!n||!pw){setNote("أدخل الاسم والرقم.");return render()}
+      let s=null;
+      if(/^[A-Za-z0-9_.-]+$/.test(pw)){const d=await getDoc(doc(db,"students",pw));if(d.exists()&&d.data().name.trim().toLowerCase()===n.toLowerCase())s=d.data()}
+      if(s){me={name:s.name,num:s.num,status:s.status};
+        if(s.status==="approved"){view="welcome"}else{view="wait";watchStudent(s.num)}
+        return render()}
+      try{await adminLogin(n.toLowerCase(),pw)}catch(e){setNote("الاسم أو الرقم غير صحيح، أو لم تسجّل بعد.");render()}
+    }
+    else if(a==="approve"){
+      if(count("approved")>=cfg.capacity){setNote(`وصلت للحد الأقصى (${cfg.capacity}). ارفع العدد الأقصى أولاً.`);return render()}
+      await updateDoc(doc(db,"students",el.dataset.id),{status:"approved"});
+    }
+    else if(a==="reject"){await updateDoc(doc(db,"students",el.dataset.id),{status:"rejected"})}
+    else if(a==="cap"){
+      const v=parseInt(document.getElementById("cap").value,10);
+      if(!(v>=1)){setNote("أدخل رقماً صحيحاً.");return render()}
+      await setDoc(doc(db,"config","main"),{capacity:v});setNote("تم تحديث العدد الأقصى إلى "+v,"good");render();
+    }
+    else if(a==="addadmin"){
+      if(!me.main)return;
+      const u=document.getElementById("an").value.trim().toLowerCase(),p=document.getElementById("ap").value.trim();
+      if(!/^[a-z0-9_.-]+$/.test(u)||p.length<6){setNote("اسم بحروف إنجليزية/أرقام، وكلمة سر 6 أحرف على الأقل.");return render()}
+      if(u===MAIN_USER){setNote("هذا الاسم محجوز.");return render()}
+      const second=initializeApp(firebaseConfig,"second"+Date.now());
+      const a2=getAuth(second);
+      const cr=await createUserWithEmailAndPassword(a2,u+DOMAIN,p);
+      await signOut(a2);
+      await setDoc(doc(db,"admins",cr.user.uid),{u,uid:cr.user.uid});
+      setNote("تمت إضافة المسؤول "+u,"good");render();
+    }
+  }catch(e){setNote("حدث خطأ: "+(e.code||e.message||"غير معروف"));render()}
+  finally{busy=false}
+});
+render();
+</script>
+</body>
+</html>
